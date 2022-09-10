@@ -29,6 +29,7 @@ var (
 		"groups_2@dexidp.com": {{Email: "groups_0@dexidp.com"}},
 		"groups_0@dexidp.com": {},
 	}
+	callCounter = make(map[string]int)
 )
 
 func testSetup(t *testing.T) *httptest.Server {
@@ -39,6 +40,7 @@ func testSetup(t *testing.T) *httptest.Server {
 		userKey := r.URL.Query().Get("userKey")
 		if groups, ok := testGroups[userKey]; ok {
 			json.NewEncoder(w).Encode(admin.Groups{Groups: groups})
+			callCounter[userKey]++
 		}
 	})
 
@@ -216,7 +218,6 @@ func TestGetGroups(t *testing.T) {
 
 	conn.adminSrv, err = admin.NewService(context.Background(), option.WithoutAuthentication(), option.WithEndpoint(ts.URL))
 	assert.Nil(t, err)
-
 	type testCase struct {
 		userKey                        string
 		fetchTransitiveGroupMembership bool
@@ -251,6 +252,7 @@ func TestGetGroups(t *testing.T) {
 		},
 	} {
 		testCase := testCase
+		callCounter = map[string]int{}
 		t.Run(name, func(t *testing.T) {
 			assert := assert.New(t)
 			lookup := make(map[string]struct{})
@@ -262,6 +264,7 @@ func TestGetGroups(t *testing.T) {
 				assert.Nil(err)
 			}
 			assert.ElementsMatch(testCase.expectedGroups, groups)
+			t.Logf("[%s] Amount of API calls per userKey: %+v\n", t.Name(), callCounter)
 		})
 	}
 }
