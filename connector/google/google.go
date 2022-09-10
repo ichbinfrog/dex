@@ -247,10 +247,6 @@ func (c *googleConnector) createIdentity(ctx context.Context, identity connector
 
 // getGroups creates a connection to the admin directory service and lists all groups the user is a member of
 func (c *googleConnector) getGroups(email string, fetchTransitiveGroupMembership bool, lookup map[string]struct{}) ([]string, error) {
-	if _, ok := lookup[email]; ok {
-		return []string{}, nil
-	}
-
 	var err error
 	groupList := &admin.Groups{}
 	groupKeys := []string{}

@@ -17,17 +17,17 @@ import (
 )
 
 var (
-	// groups_0
-	//		├─────────────────┐
-	//	groups_1 			user_3
-	//		├──────────┐
-	//	user_1		 user_2
-	testGroups = map[string]admin.Groups{
-		"user_1@dexidp.com":   {Groups: []*admin.Group{{Email: "groups_1@dexidp.com"}}},
-		"user_2@dexidp.com":   {Groups: []*admin.Group{{Email: "groups_1@dexidp.com"}}},
-		"groups_1@dexidp.com": {Groups: []*admin.Group{{Email: "groups_0@dexidp.com"}}},
-		"user_3@dexidp.com":   {Groups: []*admin.Group{{Email: "groups_0@dexidp.com"}}},
-		"groups_0@dexidp.com": {Groups: []*admin.Group{}},
+	//			groups_0
+	//		┌───────┤
+	//  groups_2 groups_1
+	//		│		├────────┐
+	//		└──	 user_1	  user_2
+	testGroups = map[string][]*admin.Group{
+		"user_1@dexidp.com":   {{Email: "groups_2@dexidp.com"}, {Email: "groups_1@dexidp.com"}},
+		"user_2@dexidp.com":   {{Email: "groups_1@dexidp.com"}},
+		"groups_1@dexidp.com": {{Email: "groups_0@dexidp.com"}},
+		"groups_2@dexidp.com": {{Email: "groups_0@dexidp.com"}},
+		"groups_0@dexidp.com": {},
 	}
 )
 
@@ -38,7 +38,7 @@ func testSetup(t *testing.T) *httptest.Server {
 		w.Header().Add("Content-Type", "application/json")
 		userKey := r.URL.Query().Get("userKey")
 		if groups, ok := testGroups[userKey]; ok {
-			json.NewEncoder(w).Encode(groups)
+			json.NewEncoder(w).Encode(admin.Groups{Groups: groups})
 		}
 	})
 
@@ -229,13 +229,25 @@ func TestGetGroups(t *testing.T) {
 			userKey:                        "user_1@dexidp.com",
 			fetchTransitiveGroupMembership: false,
 			shouldErr:                      false,
-			expectedGroups:                 []string{"groups_1@dexidp.com"},
+			expectedGroups:                 []string{"groups_1@dexidp.com", "groups_2@dexidp.com"},
 		},
 		"user1_transitive_lookup": {
 			userKey:                        "user_1@dexidp.com",
 			fetchTransitiveGroupMembership: true,
 			shouldErr:                      false,
-			expectedGroups:                 []string{"groups_1@dexidp.com", "groups_0@dexidp.com"},
+			expectedGroups:                 []string{"groups_0@dexidp.com", "groups_1@dexidp.com", "groups_2@dexidp.com"},
+		},
+		"user2_non_transitive_lookup": {
+			userKey:                        "user_2@dexidp.com",
+			fetchTransitiveGroupMembership: false,
+			shouldErr:                      false,
+			expectedGroups:                 []string{"groups_1@dexidp.com"},
+		},
+		"user2_transitive_lookup": {
+			userKey:                        "user_2@dexidp.com",
+			fetchTransitiveGroupMembership: true,
+			shouldErr:                      false,
+			expectedGroups:                 []string{"groups_0@dexidp.com", "groups_1@dexidp.com"},
 		},
 	} {
 		testCase := testCase
