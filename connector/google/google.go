@@ -247,31 +247,31 @@ func (c *googleConnector) createIdentity(ctx context.Context, identity connector
 // getGroups creates a connection to the admin directory service and lists all groups the user is a member of
 func (c *googleConnector) getGroups(email string, fetchTransitiveGroupMembership bool, lookup map[string]struct{}) ([]string, error) {
 	var err error
-	groupList := &admin.Groups{}
-	groupKeys := []string{}
+	groupsList := &admin.Groups{}
+	userGroups := []string{}
 
 	for {
-		groupList, err = c.adminSrv.Groups.List().UserKey(email).PageToken(groupList.NextPageToken).Do()
+		groupsList, err = c.adminSrv.Groups.List().UserKey(email).PageToken(groupsList.NextPageToken).Do()
 		if err != nil {
 			return nil, err
 		}
 
-		for _, group := range groupList.Groups {
-			groupKeys = append(groupKeys, group.Email)
+		for _, group := range groupsList.Groups {
+			userGroups = append(userGroups, group.Email)
 			if _, ok := lookup[group.Email]; !ok && fetchTransitiveGroupMembership {
 				lookup[group.Email] = struct{}{}
 				transtiveGroups, err := c.getGroups(group.Email, fetchTransitiveGroupMembership, lookup)
 				if err != nil {
 					return nil, err
 				}
-				groupKeys = append(groupKeys, transtiveGroups...)
+				userGroups = append(userGroups, transtiveGroups...)
 			}
 		}
-		if groupList.NextPageToken == "" {
+		if groupsList.NextPageToken == "" {
 			break
 		}
 	}
-	return uniqueGroups(groupKeys), err
+	return uniqueGroups(userGroups), err
 }
 
 // createDirectoryService sets up super user impersonation and creates an admin client for calling
@@ -307,6 +307,7 @@ func createDirectoryService(serviceAccountFilePath, email string, logger log.Log
 	return admin.NewService(ctx, option.WithHTTPClient(config.Client(ctx)))
 }
 
+// uniqueGroups returns the unique groups of a slice
 func uniqueGroups(groups []string) []string {
 	keys := make(map[string]struct{})
 	unique := []string{}
