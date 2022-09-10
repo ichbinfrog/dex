@@ -251,13 +251,16 @@ func (c *googleConnector) getGroups(email string, fetchTransitiveGroupMembership
 	userGroups := []string{}
 
 	for {
-		groupsList, err = c.adminSrv.Groups.List().UserKey(email).PageToken(groupsList.NextPageToken).Do()
+		groupsList, err = c.adminSrv.Groups.List().
+			UserKey(email).PageToken(groupsList.NextPageToken).Do()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("could not list groups: %v", err)
 		}
 
 		for _, group := range groupsList.Groups {
+			// TODO (joelspeed): Make desired group key configurable
 			userGroups = append(userGroups, group.Email)
+
 			if _, ok := lookup[group.Email]; !ok && fetchTransitiveGroupMembership {
 				lookup[group.Email] = struct{}{}
 				transtiveGroups, err := c.getGroups(group.Email, fetchTransitiveGroupMembership, lookup)
