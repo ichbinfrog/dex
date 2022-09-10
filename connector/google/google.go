@@ -263,11 +263,11 @@ func (c *googleConnector) getGroups(email string, fetchTransitiveGroupMembership
 
 			if _, ok := lookup[group.Email]; !ok && fetchTransitiveGroupMembership {
 				lookup[group.Email] = struct{}{}
-				transtiveGroups, err := c.getGroups(group.Email, fetchTransitiveGroupMembership, lookup)
+				transitiveGroups, err := c.getGroups(group.Email, fetchTransitiveGroupMembership, lookup)
 				if err != nil {
 					return nil, err
 				}
-				userGroups = append(userGroups, transtiveGroups...)
+				userGroups = append(userGroups, transitiveGroups...)
 			}
 		}
 		if groupsList.NextPageToken == "" {
