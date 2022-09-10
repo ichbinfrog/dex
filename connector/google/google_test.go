@@ -167,38 +167,6 @@ func TestOpen(t *testing.T) {
 	}
 }
 
-func TestUniqueInsert(t *testing.T) {
-	type testCase struct {
-		target   []string
-		insert   []string
-		expected []string
-	}
-
-	for name, testCase := range map[string]testCase{
-		"unique_insert": {
-			target:   []string{"group_0"},
-			insert:   []string{"group_1"},
-			expected: []string{"group_0", "group_1"},
-		},
-		"non_unique_insert": {
-			target:   []string{"group_0"},
-			insert:   []string{"group_0"},
-			expected: []string{"group_0"},
-		},
-		"empty_insert": {
-			target:   []string{"group_0"},
-			insert:   []string{},
-			expected: []string{"group_0"},
-		},
-	} {
-		testCase := testCase
-		t.Run(name, func(t *testing.T) {
-			assert := assert.New(t)
-			assert.Equal(testCase.expected, uniqueInsert(testCase.target, testCase.insert...))
-		})
-	}
-}
-
 func TestGetGroups(t *testing.T) {
 	ts := testSetup(t)
 	defer ts.Close()
